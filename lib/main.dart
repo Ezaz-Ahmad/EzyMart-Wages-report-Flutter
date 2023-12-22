@@ -95,7 +95,7 @@ class MainScreen extends StatelessWidget {
             child: Container(
               alignment: Alignment.bottomCenter,
               child: Text(
-                'Developed by Ezaz Ahmad. Version: 0.0.8V',
+                'Developed by Ezaz Ahmad. Version: 0.0.9V',
                 style: TextStyle(fontSize: fontSize, color: Colors.grey),
               ),
             ),
@@ -238,6 +238,19 @@ class _WorkHoursCalculatorState extends State<WorkHoursCalculator> {
                   ],
                 ),
               ),
+              pw.RichText(
+                text: pw.TextSpan(
+                  children: [
+                    pw.TextSpan(
+                      text: 'Expense Explanation: ',
+                      style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+                    ),
+                    pw.TextSpan(
+                      text: expenseExplanation,
+                    ),
+                  ],
+                ),
+              ),
               pw.Padding(padding: pw.EdgeInsets.symmetric(vertical: 10)),
               pw.Text(
                   'Total Hours in Gosford (Weekdays): $_totalHoursGosfordWeekday'),
@@ -269,7 +282,7 @@ class _WorkHoursCalculatorState extends State<WorkHoursCalculator> {
               pw.Container(
                 alignment: pw.Alignment.center,
                 child: pw.Text(
-                  'Developed by Ezaz Ahmad. Version: 0.0.8V',
+                  'Developed by Ezaz Ahmad. Version: 0.0.9V',
                   style: pw.TextStyle(
                     fontSize: 12, // Smaller font size for footer
                     color: PdfColors.grey,
@@ -376,7 +389,7 @@ class _WorkHoursCalculatorState extends State<WorkHoursCalculator> {
   double _grandTotalWages = 0;
   double _grandtotalbeforeTax = 0;
   double others = 0;
-  String mySentence = 'This is a sample sentence.';
+  String expenseExplanation = '';
 
   TextEditingController _dateController = TextEditingController();
   @override
@@ -745,6 +758,14 @@ class _WorkHoursCalculatorState extends State<WorkHoursCalculator> {
                   keyboardType: TextInputType.number,
                   onSaved: (value) {
                     others = double.tryParse(value ?? '') ?? 0;
+                  },
+                ),
+                TextFormField(
+                  decoration: InputDecoration(labelText: 'Expense Explanation'),
+                  keyboardType: TextInputType.multiline,
+                  maxLines: null, // Allows for multiple lines
+                  onSaved: (value) {
+                    expenseExplanation = value ?? '';
                   },
                 ),
                 TextFormField(
