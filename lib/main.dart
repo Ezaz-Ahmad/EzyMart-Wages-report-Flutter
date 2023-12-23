@@ -390,6 +390,7 @@ class _WorkHoursCalculatorState extends State<WorkHoursCalculator> {
   double _grandtotalbeforeTax = 0;
   double others = 0;
   String expenseExplanation = '';
+  bool isExpenseExplanationEnabled = false;
 
   TextEditingController _dateController = TextEditingController();
   @override
@@ -756,6 +757,14 @@ class _WorkHoursCalculatorState extends State<WorkHoursCalculator> {
                   decoration:
                       InputDecoration(labelText: 'Others /covered shift'),
                   keyboardType: TextInputType.number,
+                  onChanged: (value) {
+                    // Use onChanged to update the state
+                    setState(() {
+                      others = double.tryParse(value ?? '') ?? 0;
+                      isExpenseExplanationEnabled =
+                          others != 0; // Enable if 'others' is not zero
+                    });
+                  },
                   onSaved: (value) {
                     others = double.tryParse(value ?? '') ?? 0;
                   },
@@ -764,6 +773,8 @@ class _WorkHoursCalculatorState extends State<WorkHoursCalculator> {
                   decoration: InputDecoration(labelText: 'Expense Explanation'),
                   keyboardType: TextInputType.multiline,
                   maxLines: null, // Allows for multiple lines
+                  enabled:
+                      isExpenseExplanationEnabled, // Enable/disable based on the state variable
                   onSaved: (value) {
                     expenseExplanation = value ?? '';
                   },
