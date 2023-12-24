@@ -80,14 +80,14 @@ class MainScreen extends StatelessWidget {
     var screenSize = MediaQuery.of(context).size;
 
     // Adjust font size based on screen width
-    double fontSize = screenSize.width * 0.02; // Example scaling
+    double fontSize = screenSize.width * 0.02;
     fontSize = fontSize.clamp(
         12.0, 18.0); // Ensure font size is within a reasonable range
 
     return Scaffold(
       body: Stack(
         children: <Widget>[
-          WorkHoursCalculator(), // Your main app content
+          WorkHoursCalculator(), // main app content
           Positioned(
             left: 0,
             right: 0,
@@ -95,7 +95,7 @@ class MainScreen extends StatelessWidget {
             child: Container(
               alignment: Alignment.bottomCenter,
               child: Text(
-                'Developed by Ezaz Ahmad. Version: 0.0.9V',
+                'Developed by Ezaz Ahmad. Version: 1.0.2V',
                 style: TextStyle(fontSize: fontSize, color: Colors.grey),
               ),
             ),
@@ -216,6 +216,19 @@ class _WorkHoursCalculatorState extends State<WorkHoursCalculator> {
                 text: pw.TextSpan(
                   children: [
                     pw.TextSpan(
+                      text: 'Adamstown Weekdays Hourly Rate: ',
+                      style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+                    ),
+                    pw.TextSpan(
+                      text: '\$${_adamstownRate.toStringAsFixed(2)}',
+                    ),
+                  ],
+                ),
+              ),
+              pw.RichText(
+                text: pw.TextSpan(
+                  children: [
+                    pw.TextSpan(
                       text: 'Fuel Cost per Trip to Gosford: ',
                       style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
                     ),
@@ -257,6 +270,7 @@ class _WorkHoursCalculatorState extends State<WorkHoursCalculator> {
               pw.Text(
                   'Total Hours in Gosford (Weekends): $_totalHoursGosfordWeekend'),
               pw.Text('Total Hours in Islington: $_totalHoursIslington'),
+              pw.Text('Total Hours in Adamstown: $_totalHoursadamstown'),
               pw.Text(
                   'Fuel Cost for Gosford: \$${_totalFuelCost.toStringAsFixed(2)}'),
               pw.Padding(padding: pw.EdgeInsets.symmetric(vertical: 10)),
@@ -282,7 +296,7 @@ class _WorkHoursCalculatorState extends State<WorkHoursCalculator> {
               pw.Container(
                 alignment: pw.Alignment.center,
                 child: pw.Text(
-                  'Developed by Ezaz Ahmad. Version: 0.0.9V',
+                  'Developed by Ezaz Ahmad. Version: 1.0.2V',
                   style: pw.TextStyle(
                     fontSize: 12, // Smaller font size for footer
                     color: PdfColors.grey,
@@ -380,11 +394,13 @@ class _WorkHoursCalculatorState extends State<WorkHoursCalculator> {
   double _gosfordWeekdayRate = 0;
   double _gosfordWeekendRate = 0;
   double _islingtonRate = 0;
+  double _adamstownRate = 0; //for adamstown
   double _fuelCost = 0;
   double _taxAmount = 0; // New variable for tax amount
   double _totalHoursGosfordWeekday = 0;
   double _totalHoursGosfordWeekend = 0;
   double _totalHoursIslington = 0;
+  double _totalHoursadamstown = 0; //for adamstown
   double _totalFuelCost = 0;
   double _grandTotalWages = 0;
   double _grandtotalbeforeTax = 0;
@@ -424,6 +440,7 @@ class _WorkHoursCalculatorState extends State<WorkHoursCalculator> {
     _totalHoursGosfordWeekday = 0;
     _totalHoursGosfordWeekend = 0;
     _totalHoursIslington = 0;
+    _totalHoursadamstown = 0; //for adamstown
     _totalFuelCost = 0;
     _grandTotalWages = 0;
     _wageDetails.clear(); // Clear previous wage details
@@ -452,6 +469,8 @@ class _WorkHoursCalculatorState extends State<WorkHoursCalculator> {
               _fuelCost; // Count fuel cost every time the person is working in Gosford
         } else if (_locations[day] == 'Islington') {
           hourlyRate = _islingtonRate;
+        } else if (_locations[day] == 'Adamstown') {
+          hourlyRate = _adamstownRate;
         }
 
         double dailyWages = hourlyRate * duration;
@@ -470,6 +489,8 @@ class _WorkHoursCalculatorState extends State<WorkHoursCalculator> {
           _totalHoursGosfordWeekday += duration;
         } else if (_locations[day] == 'Islington') {
           _totalHoursIslington += duration;
+        } else if (_locations[day] == 'Adamstown') {
+          _totalHoursadamstown += duration;
         }
       }
     });
@@ -519,6 +540,8 @@ class _WorkHoursCalculatorState extends State<WorkHoursCalculator> {
                     'Total Hours in Gosford (Weekends): $_totalHoursGosfordWeekend',
                     style: TextStyle(fontSize: textSize)),
                 Text('Total Hours in Islington: $_totalHoursIslington',
+                    style: TextStyle(fontSize: textSize)),
+                Text('Total Hours in Adamstown: $_totalHoursadamstown',
                     style: TextStyle(fontSize: textSize)),
                 Text(
                     'Fuel Cost for Gosford: \$${_totalFuelCost.toStringAsFixed(2)}',
@@ -615,6 +638,7 @@ class _WorkHoursCalculatorState extends State<WorkHoursCalculator> {
                 EdgeInsets.all(screenSize.width * 0.05), // Responsive padding
             child: Column(
               children: <Widget>[
+                // Date field
                 TextFormField(
                   controller: _dateController,
                   decoration: InputDecoration(labelText: 'Date'),
@@ -623,11 +647,10 @@ class _WorkHoursCalculatorState extends State<WorkHoursCalculator> {
                     DateTime? pickedDate = await showDatePicker(
                       context: context,
                       initialDate: DateTime.now(),
-                      firstDate: DateTime(2000), // Adjust as needed
-                      lastDate: DateTime(2025), // Adjust as needed
+                      firstDate: DateTime(2000),
+                      lastDate: DateTime(2025),
                     );
                     if (pickedDate != null) {
-                      // Format the date and show it in the text field
                       _dateController.text =
                           DateFormat('yyyy-MM-dd').format(pickedDate);
                     }
@@ -636,18 +659,21 @@ class _WorkHoursCalculatorState extends State<WorkHoursCalculator> {
                     _date = value ?? '';
                   },
                 ),
+                // Employee Name field
                 TextFormField(
                   decoration: InputDecoration(labelText: 'Employee Name'),
                   onSaved: (value) {
                     _employeeName = value ?? '';
                   },
                 ),
+                // Employee Address field
                 TextFormField(
                   decoration: InputDecoration(labelText: 'Employee Address'),
                   onSaved: (value) {
                     _employeeAddress = value ?? '';
                   },
                 ),
+                // Days of the week
                 ..._workedDays.keys.map((day) {
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -666,10 +692,16 @@ class _WorkHoursCalculatorState extends State<WorkHoursCalculator> {
                         },
                       ),
                       if (_workedDays[day]!)
-                        Row(
-                          children: <Widget>[
-                            Expanded(
-                              child: ListTile(
+                        Container(
+                          margin: EdgeInsets.only(bottom: 10.0),
+                          padding: EdgeInsets.all(8.0),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[200],
+                            borderRadius: BorderRadius.circular(10.0),
+                          ),
+                          child: Column(
+                            children: <Widget>[
+                              ListTile(
                                 title: Text(
                                   _startTime[day] != null
                                       ? 'Start Time: ${_startTime[day]!.format(context)}'
@@ -678,9 +710,7 @@ class _WorkHoursCalculatorState extends State<WorkHoursCalculator> {
                                 ),
                                 onTap: () => _pickTime(context, day, true),
                               ),
-                            ),
-                            Expanded(
-                              child: ListTile(
+                              ListTile(
                                 title: Text(
                                   _endTime[day] != null
                                       ? 'End Time: ${_endTime[day]!.format(context)}'
@@ -689,32 +719,33 @@ class _WorkHoursCalculatorState extends State<WorkHoursCalculator> {
                                 ),
                                 onTap: () => _pickTime(context, day, false),
                               ),
-                            ),
-                          ],
-                        ),
-                      if (_workedDays[day]!)
-                        DropdownButtonFormField<String>(
-                          value: _locations[day],
-                          items: ['Gosford', 'Islington'].map((location) {
-                            return DropdownMenuItem(
-                              value: location,
-                              child: Text(location),
-                            );
-                          }).toList(),
-                          onChanged: (value) {
-                            setState(() {
-                              _locations[day] = value!;
-                            });
-                          },
-                          decoration: InputDecoration(
-                            labelText: 'Location',
-                            contentPadding: EdgeInsets.symmetric(
-                                horizontal: 10.0, vertical: 0),
+                              DropdownButtonFormField<String>(
+                                value: _locations[day],
+                                items: ['Gosford', 'Islington', 'Adamstown']
+                                    .map((location) {
+                                  return DropdownMenuItem(
+                                    value: location,
+                                    child: Text(location),
+                                  );
+                                }).toList(),
+                                onChanged: (value) {
+                                  setState(() {
+                                    _locations[day] = value!;
+                                  });
+                                },
+                                decoration: InputDecoration(
+                                  labelText: 'Location',
+                                  contentPadding: EdgeInsets.symmetric(
+                                      horizontal: 10.0, vertical: 0),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                     ],
                   );
                 }).toList(),
+                // Rates and costs
                 TextFormField(
                   decoration:
                       InputDecoration(labelText: 'Gosford Weekday Rate'),
@@ -739,9 +770,15 @@ class _WorkHoursCalculatorState extends State<WorkHoursCalculator> {
                   },
                 ),
                 TextFormField(
+                  decoration: InputDecoration(labelText: 'Adamstown Rate'),
+                  keyboardType: TextInputType.number,
+                  onSaved: (value) {
+                    _adamstownRate = double.tryParse(value ?? '') ?? 0;
+                  },
+                ),
+                TextFormField(
                   decoration: InputDecoration(
-                    labelText: 'Fuel Cost per Day (Only for Gosford)',
-                  ),
+                      labelText: 'Fuel Cost per Day (Only for Gosford)'),
                   keyboardType: TextInputType.number,
                   validator: (value) {
                     if (value == null || value.isEmpty) {
@@ -758,11 +795,9 @@ class _WorkHoursCalculatorState extends State<WorkHoursCalculator> {
                       InputDecoration(labelText: 'Others /covered shift'),
                   keyboardType: TextInputType.number,
                   onChanged: (value) {
-                    // Use onChanged to update the state
                     setState(() {
                       others = double.tryParse(value ?? '') ?? 0;
-                      isExpenseExplanationEnabled =
-                          others != 0; // Enable if 'others' is not zero
+                      isExpenseExplanationEnabled = others != 0;
                     });
                   },
                   onSaved: (value) {
@@ -772,17 +807,14 @@ class _WorkHoursCalculatorState extends State<WorkHoursCalculator> {
                 TextFormField(
                   decoration: InputDecoration(labelText: 'Expense Explanation'),
                   keyboardType: TextInputType.multiline,
-                  maxLines: null, // Allows for multiple lines
-                  enabled:
-                      isExpenseExplanationEnabled, // Enable/disable based on the state variable
+                  maxLines: null,
+                  enabled: isExpenseExplanationEnabled,
                   onSaved: (value) {
                     expenseExplanation = value ?? '';
                   },
                 ),
                 TextFormField(
-                  decoration: InputDecoration(
-                    labelText: 'Amount Paid on TAX', // TAX calculation
-                  ),
+                  decoration: InputDecoration(labelText: 'Amount Paid on TAX'),
                   keyboardType: TextInputType.number,
                   validator: (value) {
                     if (value == null || value.isEmpty) {
@@ -792,7 +824,7 @@ class _WorkHoursCalculatorState extends State<WorkHoursCalculator> {
                     if (number == null || number <= 0) {
                       return 'Please enter a positive tax amount';
                     }
-                    return null; // means input is valid
+                    return null;
                   },
                   onSaved: (value) {
                     _taxAmount = double.tryParse(value ?? '') ?? 0;
@@ -817,7 +849,7 @@ class _WorkHoursCalculatorState extends State<WorkHoursCalculator> {
                         child: Text('Clear'),
                         style: ElevatedButton.styleFrom(
                           primary: Colors
-                              .red, // To differentiate it from the Calculate button
+                              .red, // Differentiate from the Calculate button
                         ),
                       ),
                     ],
