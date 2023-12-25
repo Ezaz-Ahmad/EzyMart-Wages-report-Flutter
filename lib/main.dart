@@ -113,15 +113,25 @@ class WorkHoursCalculator extends StatefulWidget {
 
 class WageDetail {
   String day;
-  TimeOfDay? startTime;
-  TimeOfDay? endTime;
+  List<ShiftDetail> shifts;
   double earnings;
 
   WageDetail({
     required this.day,
+    required this.shifts,
+    this.earnings = 0.0,
+  });
+}
+
+class ShiftDetail {
+  TimeOfDay? startTime;
+  TimeOfDay? endTime;
+  String location;
+
+  ShiftDetail({
     this.startTime,
     this.endTime,
-    this.earnings = 0.0,
+    this.location = 'Gosford',
   });
 }
 
@@ -134,6 +144,37 @@ class _WorkHoursCalculatorState extends State<WorkHoursCalculator> {
     pdf.addPage(
       pw.Page(
         build: (pw.Context context) {
+          double totalHoursGosford = 0;
+          double totalHoursIslington = 0;
+          double totalHoursAdamstown = 0;
+          double totalEarnings = 0;
+
+          // Calculate total hours and earnings for all shifts
+          _wageDetails.forEach((wageDetail) {
+            wageDetail.shifts.forEach((shift) {
+              double duration =
+                  _calculateDuration(shift.startTime, shift.endTime);
+              double earnings = duration *
+                  _getHourlyRate(
+                      shift.location, wageDetail.day, shift.startTime);
+
+              // Sum up hours and earnings based on location
+              switch (shift.location) {
+                case 'Gosford':
+                  totalHoursGosford += duration;
+                  break;
+                case 'Islington':
+                  totalHoursIslington += duration;
+                  break;
+                case 'Adamstown':
+                  totalHoursAdamstown += duration;
+                  break;
+              }
+
+              totalEarnings += earnings;
+            });
+          });
+
           return pw.Column(
             children: [
               pw.Text(
@@ -161,16 +202,16 @@ class _WorkHoursCalculatorState extends State<WorkHoursCalculator> {
               ),
               pw.Text('Employee Address: $_employeeAddress'),
               pw.Padding(padding: pw.EdgeInsets.symmetric(vertical: 10)),
-              ..._wageDetails.map((wageDetail) {
-                String startTime = _formatTimeOfDay(wageDetail.startTime);
-                String endTime = _formatTimeOfDay(wageDetail.endTime);
+              ..._wageDetails.expand((wageDetail) {
+                return wageDetail.shifts.map((shift) {
+                  String startTime = _formatTimeOfDay(shift.startTime);
+                  String endTime = _formatTimeOfDay(shift.endTime);
+                  double duration =
+                      _calculateDuration(shift.startTime, shift.endTime);
 
-                double duration = _calculateDuration(
-                    wageDetail.startTime,
-                    wageDetail
-                        .endTime); // Calculate duration for each wageDetail
-                return pw.Text(
-                    '${wageDetail.day}: Start - $startTime, End - $endTime, Location: ${_locations[wageDetail.day]}, Hours: ${duration.toStringAsFixed(2)}, Earnings - \$${wageDetail.earnings.toStringAsFixed(2)}');
+                  return pw.Text(
+                      '${wageDetail.day}: Start - $startTime, End - $endTime, Location - ${shift.location}, Hours: ${duration.toStringAsFixed(2)}, Earnings - \$${(duration * _getHourlyRate(shift.location, wageDetail.day, shift.startTime)).toStringAsFixed(2)}');
+                });
               }).toList(),
               pw.Padding(padding: pw.EdgeInsets.symmetric(vertical: 10)),
               pw.RichText(
@@ -436,76 +477,130 @@ class _WorkHoursCalculatorState extends State<WorkHoursCalculator> {
     }
   }
 
+  // Initialize _wageDetails with every day having an empty list of shifts
+  List<WageDetail> _wageDetails = List.generate(
+      7,
+      (index) => WageDetail(
+          day: DateFormat('EEEE')
+              .format(DateTime.now().add(Duration(days: index))),
+          shifts: []));
+
+  void _addNewShift(String day) {
+    setState(() {
+      final wageDetail = _wageDetails.firstWhere((detail) => detail.day == day);
+      wageDetail.shifts.add(ShiftDetail());
+    });
+  }
+
+  double _getHourlyRate(String location, String day, TimeOfDay? startTime) {
+    bool isWeekend = (day == 'Friday') || // Entire Friday
+        (day == 'Saturday') || // Entire Saturday
+        (day == 'Sunday' &&
+            (startTime == null || startTime.hour < 6)); // Sunday until 6:00 AM
+
+    if (location == 'Gosford') {
+      return isWeekend ? _gosfordWeekendRate : _gosfordWeekdayRate;
+    } else if (location == 'Islington') {
+      return _islingtonRate;
+    } else if (location == 'Adamstown') {
+      return _adamstownRate;
+    }
+    return 0.0; // Default rate if location is not recognized
+  }
+
   void _calculateWages() {
     _totalHoursGosfordWeekday = 0;
     _totalHoursGosfordWeekend = 0;
     _totalHoursIslington = 0;
-    _totalHoursadamstown = 0; //for adamstown
+    _totalHoursadamstown = 0;
     _totalFuelCost = 0;
     _grandTotalWages = 0;
-    _wageDetails.clear(); // Clear previous wage details
 
-    _workedDays.forEach((day, worked) {
-      if (worked && _startTime[day] != null && _endTime[day] != null) {
-        TimeOfDay start = _startTime[day]!;
-        TimeOfDay end = _endTime[day]!;
-        DateTime startDateTime = DateTime(0, 0, 0, start.hour, start.minute);
-        DateTime endDateTime = DateTime(0, 0, 0, end.hour, end.minute);
-        if (end.hour < start.hour ||
-            (end.hour == start.hour && end.minute < start.minute)) {
-          endDateTime = endDateTime.add(Duration(days: 1));
-        }
-        double duration =
-            endDateTime.difference(startDateTime).inMinutes / 60.0;
+    // Iterate over each day's wage details
+    for (var wageDetail in _wageDetails) {
+      double dailyWages = 0.0;
 
-        double hourlyRate = 0.0;
-        bool isWeekend = (day == 'Friday' && start.hour >= 0) ||
-            (day == 'Saturday') ||
-            (day == 'Sunday' && start.hour < 6);
+      // Iterate over each shift for the current day
+      for (var shift in wageDetail.shifts) {
+        if (shift.startTime != null && shift.endTime != null) {
+          DateTime startDateTime =
+              DateTime(0, 0, 0, shift.startTime!.hour, shift.startTime!.minute);
+          DateTime endDateTime =
+              DateTime(0, 0, 0, shift.endTime!.hour, shift.endTime!.minute);
 
-        if (_locations[day] == 'Gosford') {
-          hourlyRate = isWeekend ? _gosfordWeekendRate : _gosfordWeekdayRate;
-          _totalFuelCost +=
-              _fuelCost; // Count fuel cost every time the person is working in Gosford
-        } else if (_locations[day] == 'Islington') {
-          hourlyRate = _islingtonRate;
-        } else if (_locations[day] == 'Adamstown') {
-          hourlyRate = _adamstownRate;
-        }
+          if (endDateTime.isBefore(startDateTime)) {
+            endDateTime = endDateTime.add(Duration(days: 1));
+          }
 
-        double dailyWages = hourlyRate * duration;
-        _grandTotalWages += dailyWages;
+          double duration =
+              endDateTime.difference(startDateTime).inMinutes / 60.0;
+          double hourlyRate;
+          bool isWeekend = (wageDetail.day == 'Friday') || // Entire Friday
+              (wageDetail.day == 'Saturday') || // Entire Saturday
+              (wageDetail.day == 'Sunday' &&
+                  shift.startTime!.hour < 6); // Sunday until 6:00 AM
 
-        _wageDetails.add(WageDetail(
-          day: day,
-          startTime: _startTime[day],
-          endTime: _endTime[day],
-          earnings: dailyWages,
-        ));
+          // Set the hourly rate based on location
+          switch (shift.location) {
+            case 'Gosford':
+              hourlyRate =
+                  isWeekend ? _gosfordWeekendRate : _gosfordWeekdayRate;
+              _totalFuelCost += _fuelCost;
+              break;
+            case 'Islington':
+              hourlyRate = _islingtonRate;
+              break;
+            case 'Adamstown':
+              hourlyRate = _adamstownRate;
+              break;
+            default:
+              hourlyRate = 0.0; // Default rate if location is not recognized
+              break;
+          }
 
-        if (isWeekend) {
-          _totalHoursGosfordWeekend += duration;
-        } else if (_locations[day] == 'Gosford') {
-          _totalHoursGosfordWeekday += duration;
-        } else if (_locations[day] == 'Islington') {
-          _totalHoursIslington += duration;
-        } else if (_locations[day] == 'Adamstown') {
-          _totalHoursadamstown += duration;
+          // Calculate and sum wages for each shift
+          dailyWages += hourlyRate * duration;
+
+          // Sum up total hours for the report based on location and weekend
+          if (isWeekend) {
+            _totalHoursGosfordWeekend += duration;
+          } else {
+            switch (shift.location) {
+              case 'Gosford':
+                _totalHoursGosfordWeekday += duration;
+                break;
+              case 'Islington':
+                _totalHoursIslington += duration;
+                break;
+              case 'Adamstown':
+                _totalHoursadamstown += duration;
+                break;
+            }
+          }
         }
       }
-    });
 
+      // Update the earnings for the current day
+      wageDetail.earnings += dailyWages;
+
+      // Sum up the grand total wages
+      _grandTotalWages += dailyWages;
+    }
+
+    // Final calculations for grand total wages
     _grandTotalWages += _totalFuelCost;
     _grandTotalWages += others;
     _grandTotalWages -= _taxAmount;
 
-    if (_grandTotalWages <= 0) {
-      //setting the granttotal 0, if the tax is more than the wages earned
+    // Ensure the grand total is not negative
+    if (_grandTotalWages < 0) {
       _grandTotalWages = 0;
     }
-    _grandtotalbeforeTax =
-        _grandTotalWages + _taxAmount; //showing the amount before TAX
 
+    // Calculate the grand total before tax
+    _grandtotalbeforeTax = _grandTotalWages + _taxAmount;
+
+    // Show the total wages dialog
     _showTotalWagesDialog();
   }
 
@@ -556,22 +651,17 @@ class _WorkHoursCalculatorState extends State<WorkHoursCalculator> {
                 Text(
                     'Grand Total Wages (After deducting TAX amount): \$${_grandTotalWages.toStringAsFixed(2)}',
                     style: TextStyle(fontSize: textSize)),
-                // Add additional details here if needed
               ],
             ),
           ),
           actions: <Widget>[
             TextButton(
               child: Text('OK', style: TextStyle(fontSize: textSize)),
-              onPressed: () {
-                Navigator.of(context).pop(); // Close the dialog
-              },
+              onPressed: () => Navigator.of(context).pop(),
             ),
             TextButton(
               child: Text('Save as PDF', style: TextStyle(fontSize: textSize)),
-              onPressed: () {
-                _saveAsPdf();
-              },
+              onPressed: _saveAsPdf,
             ),
           ],
         );
@@ -587,15 +677,18 @@ class _WorkHoursCalculatorState extends State<WorkHoursCalculator> {
         build: (pw.Context context) {
           return pw.Column(
             children: [
-              pw.Text('Date : $_date'),
+              pw.Text('Date: $_date'),
               pw.Text('Employee Name: $_employeeName'),
               pw.Text('Employee Address: $_employeeAddress'),
               pw.Padding(padding: pw.EdgeInsets.symmetric(vertical: 10)),
-              ..._wageDetails.map((wageDetail) {
-                String startTime = _formatTimeOfDay(wageDetail.startTime);
-                String endTime = _formatTimeOfDay(wageDetail.endTime);
-                return pw.Text(
-                    '${wageDetail.day}: Start - $startTime, End - $endTime, Location - ${_locations[wageDetail.day]}');
+              ..._wageDetails.expand((wageDetail) {
+                return wageDetail.shifts.map((shift) {
+                  String startTime = _formatTimeOfDay(shift.startTime);
+                  String endTime = _formatTimeOfDay(shift.endTime);
+                  return pw.Text(
+                    '${wageDetail.day}: Start - $startTime, End - $endTime, Location - ${shift.location}, Earnings - \$${wageDetail.earnings.toStringAsFixed(2)}',
+                  );
+                });
               }).toList(),
             ],
           );
@@ -662,10 +755,17 @@ class _WorkHoursCalculatorState extends State<WorkHoursCalculator> {
                 // Employee Name field
                 TextFormField(
                   decoration: InputDecoration(labelText: 'Employee Name'),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter the employee name';
+                    }
+                    return null; // Return null to indicate no error
+                  },
                   onSaved: (value) {
                     _employeeName = value ?? '';
                   },
                 ),
+
                 // Employee Address field
                 TextFormField(
                   decoration: InputDecoration(labelText: 'Employee Address'),
@@ -674,73 +774,101 @@ class _WorkHoursCalculatorState extends State<WorkHoursCalculator> {
                   },
                 ),
                 // Days of the week
-                ..._workedDays.keys.map((day) {
+                // Iterating over each WageDetail for each day
+                ..._wageDetails.map((wageDetail) {
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
+                      // Checkbox to indicate if the user worked on that day
                       CheckboxListTile(
-                        title: Text(day),
-                        value: _workedDays[day],
+                        title: Text(wageDetail.day),
+                        value: wageDetail.shifts.isNotEmpty,
                         onChanged: (bool? value) {
                           setState(() {
-                            _workedDays[day] = value ?? false;
-                            if (!value!) {
-                              _startTime[day] = null;
-                              _endTime[day] = null;
+                            if (value ?? false) {
+                              if (wageDetail.shifts.isEmpty) {
+                                wageDetail.shifts.add(ShiftDetail());
+                              }
+                            } else {
+                              wageDetail.shifts.clear();
                             }
                           });
                         },
                       ),
-                      if (_workedDays[day]!)
-                        Container(
-                          margin: EdgeInsets.only(bottom: 10.0),
-                          padding: EdgeInsets.all(8.0),
+
+                      // Displaying shifts
+                      ...wageDetail.shifts.map((shift) {
+                        return Container(
+                          margin: EdgeInsets.symmetric(vertical: 10),
+                          padding: EdgeInsets.all(8),
                           decoration: BoxDecoration(
                             color: Colors.grey[200],
-                            borderRadius: BorderRadius.circular(10.0),
+                            borderRadius: BorderRadius.circular(10),
                           ),
                           child: Column(
-                            children: <Widget>[
+                            children: [
                               ListTile(
                                 title: Text(
-                                  _startTime[day] != null
-                                      ? 'Start Time: ${_startTime[day]!.format(context)}'
+                                  shift.startTime != null
+                                      ? 'Start Time: ${shift.startTime!.format(context)}'
                                       : 'Start Time',
-                                  style: TextStyle(fontSize: 16.0),
                                 ),
-                                onTap: () => _pickTime(context, day, true),
+                                onTap: () async {
+                                  TimeOfDay? pickedTime = await showTimePicker(
+                                    context: context,
+                                    initialTime:
+                                        shift.startTime ?? TimeOfDay.now(),
+                                  );
+                                  if (pickedTime != null) {
+                                    setState(
+                                        () => shift.startTime = pickedTime);
+                                  }
+                                },
                               ),
                               ListTile(
                                 title: Text(
-                                  _endTime[day] != null
-                                      ? 'End Time: ${_endTime[day]!.format(context)}'
+                                  shift.endTime != null
+                                      ? 'End Time: ${shift.endTime!.format(context)}'
                                       : 'End Time',
-                                  style: TextStyle(fontSize: 16.0),
                                 ),
-                                onTap: () => _pickTime(context, day, false),
+                                onTap: () async {
+                                  TimeOfDay? pickedTime = await showTimePicker(
+                                    context: context,
+                                    initialTime:
+                                        shift.endTime ?? TimeOfDay.now(),
+                                  );
+                                  if (pickedTime != null) {
+                                    setState(() => shift.endTime = pickedTime);
+                                  }
+                                },
                               ),
                               DropdownButtonFormField<String>(
-                                value: _locations[day],
+                                value: shift.location,
                                 items: ['Gosford', 'Islington', 'Adamstown']
-                                    .map((location) {
-                                  return DropdownMenuItem(
-                                    value: location,
-                                    child: Text(location),
-                                  );
-                                }).toList(),
+                                    .map((location) => DropdownMenuItem(
+                                          value: location,
+                                          child: Text(location),
+                                        ))
+                                    .toList(),
                                 onChanged: (value) {
-                                  setState(() {
-                                    _locations[day] = value!;
-                                  });
+                                  setState(() => shift.location = value!);
                                 },
                                 decoration: InputDecoration(
                                   labelText: 'Location',
-                                  contentPadding: EdgeInsets.symmetric(
-                                      horizontal: 10.0, vertical: 0),
                                 ),
                               ),
                             ],
                           ),
+                        );
+                      }).toList(),
+
+                      // Button to add a new shift
+                      if (wageDetail.shifts.isNotEmpty)
+                        TextButton(
+                          onPressed: () => setState(() {
+                            wageDetail.shifts.add(ShiftDetail());
+                          }),
+                          child: Text('Add Another Shift'),
                         ),
                     ],
                   );
