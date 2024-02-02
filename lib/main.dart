@@ -316,18 +316,19 @@ class _WorkHoursCalculatorState extends State<WorkHoursCalculator> {
                   'Fuel Cost for Gosford: \$${_totalFuelCost.toStringAsFixed(2)}'),
               pw.Padding(padding: pw.EdgeInsets.symmetric(vertical: 10)),
               pw.Text(
-                  'Grand Total Wages (Before deducting TAX amount): \$${_grandtotalbeforeTax.toStringAsFixed(2)}',
+                  'Grand Total Wages (Before deducting Transferred amount): \$${_grandtotalbeforeTax.toStringAsFixed(2)}',
                   style: pw.TextStyle(
                     fontWeight: pw.FontWeight.bold,
                     color: PdfColors.red,
                   )),
-              pw.Text('Amount Paid on Tax: \$${_taxAmount.toStringAsFixed(2)}',
+              pw.Text(
+                  'Amount Transferred on Bank: \$${_taxAmount.toStringAsFixed(2)}',
                   style: pw.TextStyle(
                     fontWeight: pw.FontWeight.bold,
                     color: PdfColors.blue,
                   )),
               pw.Text(
-                  'Grand Total Wages (After deducting TAX amount): \$${_grandTotalWages.toStringAsFixed(2)}',
+                  'Grand Total Wages (After deductingTransferred amount): \$${_grandTotalWages.toStringAsFixed(2)}',
                   style: pw.TextStyle(
                     fontWeight: pw.FontWeight.bold,
                     color: PdfColors.red,
@@ -337,7 +338,7 @@ class _WorkHoursCalculatorState extends State<WorkHoursCalculator> {
               pw.Container(
                 alignment: pw.Alignment.center,
                 child: pw.Text(
-                  'Developed by Ezaz Ahmad. Version: 1.0.2V',
+                  'Developed by Ezaz Ahmad. Version: 1.0.3V',
                   style: pw.TextStyle(
                     fontSize: 12, // Smaller font size for footer
                     color: PdfColors.grey,
@@ -644,12 +645,13 @@ class _WorkHoursCalculatorState extends State<WorkHoursCalculator> {
                 Text('Other/covered shift: \$${others.toStringAsFixed(2)}',
                     style: TextStyle(fontSize: textSize)),
                 Text(
-                    'Grand Total Wages (Before deducting TAX amount): \$${_grandtotalbeforeTax.toStringAsFixed(2)}',
-                    style: TextStyle(fontSize: textSize)),
-                Text('Amount Paid on Tax: \$${_taxAmount.toStringAsFixed(2)}',
+                    'Grand Total Wages (Before deducting Transferred amount): \$${_grandtotalbeforeTax.toStringAsFixed(2)}',
                     style: TextStyle(fontSize: textSize)),
                 Text(
-                    'Grand Total Wages (After deducting TAX amount): \$${_grandTotalWages.toStringAsFixed(2)}',
+                    'Transfered Amount on Bank: \$${_taxAmount.toStringAsFixed(2)}',
+                    style: TextStyle(fontSize: textSize)),
+                Text(
+                    'Grand Total Wages (After deducting Transferred amount): \$${_grandTotalWages.toStringAsFixed(2)}',
                     style: TextStyle(fontSize: textSize)),
               ],
             ),
@@ -919,8 +921,7 @@ class _WorkHoursCalculatorState extends State<WorkHoursCalculator> {
                   },
                 ),
                 TextFormField(
-                  decoration:
-                      InputDecoration(labelText: 'Others /covered shift'),
+                  decoration: InputDecoration(labelText: 'Others Expenses'),
                   keyboardType: TextInputType.number,
                   onChanged: (value) {
                     setState(() {
@@ -942,15 +943,15 @@ class _WorkHoursCalculatorState extends State<WorkHoursCalculator> {
                   },
                 ),
                 TextFormField(
-                  decoration: InputDecoration(labelText: 'Amount Paid on TAX'),
+                  decoration: InputDecoration(labelText: 'Amount Transferred'),
                   keyboardType: TextInputType.number,
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Please enter a tax amount';
+                      return 'Please enter a Transferred amount';
                     }
                     final number = double.tryParse(value);
                     if (number == null || number <= 0) {
-                      return 'Please enter a positive tax amount';
+                      return 'Please enter a positive Transferred amount';
                     }
                     return null;
                   },
