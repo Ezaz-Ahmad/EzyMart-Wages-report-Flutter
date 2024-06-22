@@ -1022,14 +1022,19 @@ class _WorkHoursCalculatorState extends State<WorkHoursCalculator> {
                   },
                 ),
                 TextFormField(
-                  decoration:
-                      InputDecoration(labelText: 'CLosing Pouch Location:'),
+                  decoration: InputDecoration(
+                    labelText: 'Closing Pouch Location:',
+                    hintText: 'e.g., Gosford',
+                    hintStyle: TextStyle(
+                        color: Colors.grey), // Adjust the color to be lighter
+                  ),
                   keyboardType: TextInputType.multiline,
                   maxLines: null,
                   onSaved: (value) {
                     PouchLocation = value ?? '';
                   },
                 ),
+
                 TextFormField(
                   controller: _dateController,
                   decoration: InputDecoration(labelText: 'Date of the pouch: '),
