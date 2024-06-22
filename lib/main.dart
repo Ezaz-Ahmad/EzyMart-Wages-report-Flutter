@@ -95,7 +95,7 @@ class MainScreen extends StatelessWidget {
             child: Container(
               alignment: Alignment.bottomCenter,
               child: Text(
-                'Developed by Ezaz Ahmad. Version: 1.0.2V',
+                'Developed by Ezaz Ahmad. Version: 1.1.3V',
                 style: TextStyle(fontSize: fontSize, color: Colors.grey),
               ),
             ),
@@ -305,6 +305,7 @@ class _WorkHoursCalculatorState extends State<WorkHoursCalculator> {
                   ],
                 ),
               ),
+
               pw.Padding(padding: pw.EdgeInsets.symmetric(vertical: 10)),
               pw.Text(
                   'Total Hours in Gosford (Weekdays): $_totalHoursGosfordWeekday'),
@@ -333,12 +334,55 @@ class _WorkHoursCalculatorState extends State<WorkHoursCalculator> {
                     fontWeight: pw.FontWeight.bold,
                     color: PdfColors.red,
                   )),
+              pw.Padding(padding: pw.EdgeInsets.symmetric(vertical: 20)),
               pw.Spacer(), // Use Spacer to push the footer to the bottom
               // Footer text (developer signature)
               pw.Container(
                 alignment: pw.Alignment.center,
                 child: pw.Text(
-                  'Developed by Ezaz Ahmad. Version: 1.0.3V',
+                  'Developed by Ezaz Ahmad. Version: 1.1.3V',
+                  style: pw.TextStyle(
+                    fontSize: 12, // Smaller font size for footer
+                    color: PdfColors.grey,
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+
+    // Second Page
+    pdf.addPage(
+      pw.Page(
+        build: (pw.Context context) {
+          return pw.Column(
+            children: [
+              pw.Padding(padding: pw.EdgeInsets.symmetric(vertical: 10)),
+              pw.RichText(
+                text: pw.TextSpan(
+                  children: [
+                    pw.TextSpan(
+                      text: 'Rest of the Cash Taken Explanation: ',
+                      style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+                    ),
+                    pw.TextSpan(
+                      text: cashtakenExplanation,
+                    ),
+                    pw.TextSpan(
+                      text:
+                          '\n\nSalam brother, as per your previous instruction I have sorted my wages from $PouchDay (${cashTakenDate}) closing amount of ${PouchLocation}. On $PouchDay the closing amount of $PouchLocation was \$${closingAmount}, and my wages left after deducting Transferred amount is \$${_grandTotalWages}\n\nAMOUNT LEFT AFTER SORTING WAGES \n= (\$${closingAmount} - \$${_grandTotalWages}) = \$${wagesLeftOver}\n\nAnd I have left the after wages amount on the place where I usually put the closing money for Gosford.\n\nPlease let me know brother if there is any issue.\n\nThank You So Much Brother',
+                    ),
+                  ],
+                ),
+              ),
+              pw.Spacer(), // Use Spacer to push the footer to the bottom
+              // Footer text (developer signature)
+              pw.Container(
+                alignment: pw.Alignment.center,
+                child: pw.Text(
+                  'Developed by Ezaz Ahmad. Version: 1.1.3V',
                   style: pw.TextStyle(
                     fontSize: 12, // Smaller font size for footer
                     color: PdfColors.grey,
@@ -427,6 +471,7 @@ class _WorkHoursCalculatorState extends State<WorkHoursCalculator> {
   };
   // New variables for employee details
   String _date = '';
+  String cashTakenDate = '';
   String _employeeName = '';
   String _employeeAddress = '';
 
@@ -447,7 +492,12 @@ class _WorkHoursCalculatorState extends State<WorkHoursCalculator> {
   double _grandTotalWages = 0;
   double _grandtotalbeforeTax = 0;
   double others = 0;
+  double wagesLeftOver = 0;
+  String PouchDay = '';
+  String PouchLocation = '';
   String expenseExplanation = '';
+  String cashtakenExplanation = '';
+  double closingAmount = 0;
   bool isExpenseExplanationEnabled = false;
 
   TextEditingController _dateController = TextEditingController();
@@ -516,6 +566,7 @@ class _WorkHoursCalculatorState extends State<WorkHoursCalculator> {
     _totalHoursadamstown = 0;
     _totalFuelCost = 0;
     _grandTotalWages = 0;
+    wagesLeftOver = 0;
 
     // Iterate over each day's wage details
     for (var wageDetail in _wageDetails) {
@@ -600,6 +651,8 @@ class _WorkHoursCalculatorState extends State<WorkHoursCalculator> {
 
     // Calculate the grand total before tax
     _grandtotalbeforeTax = _grandTotalWages + _taxAmount;
+//calculation for letfover wages
+    wagesLeftOver = closingAmount - _grandTotalWages;
 
     // Show the total wages dialog
     _showTotalWagesDialog();
@@ -957,6 +1010,56 @@ class _WorkHoursCalculatorState extends State<WorkHoursCalculator> {
                   },
                   onSaved: (value) {
                     _taxAmount = double.tryParse(value ?? '') ?? 0;
+                  },
+                ),
+                //this block is for from which date pouch you are taking the wages
+                TextFormField(
+                  decoration: InputDecoration(labelText: 'Name of the Day:'),
+                  keyboardType: TextInputType.multiline,
+                  maxLines: null,
+                  onSaved: (value) {
+                    PouchDay = value ?? '';
+                  },
+                ),
+                TextFormField(
+                  decoration:
+                      InputDecoration(labelText: 'CLosing Pouch Location:'),
+                  keyboardType: TextInputType.multiline,
+                  maxLines: null,
+                  onSaved: (value) {
+                    PouchLocation = value ?? '';
+                  },
+                ),
+                TextFormField(
+                  controller: _dateController,
+                  decoration: InputDecoration(labelText: 'Date of the pouch: '),
+                  readOnly: true, // Make the text field read-only
+                  onTap: () async {
+                    DateTime? pickedDate = await showDatePicker(
+                      context: context,
+                      initialDate: DateTime.now(),
+                      firstDate: DateTime(2000),
+                      lastDate: DateTime(2025),
+                    );
+                    if (pickedDate != null) {
+                      _dateController.text =
+                          DateFormat('yyyy-MM-dd').format(pickedDate);
+                    }
+                  },
+                  onSaved: (value) {
+                    cashTakenDate = value ?? '';
+                  },
+                ),
+                TextFormField(
+                  decoration: InputDecoration(labelText: 'Closing day Amount:'),
+                  keyboardType: TextInputType.number,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter amount';
+                    }
+                  },
+                  onSaved: (value) {
+                    closingAmount = double.tryParse(value ?? '') ?? 0;
                   },
                 ),
                 Padding(
