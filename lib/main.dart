@@ -153,7 +153,7 @@ class _WorkHoursCalculatorState extends State<WorkHoursCalculator> {
           _wageDetails.forEach((wageDetail) {
             wageDetail.shifts.forEach((shift) {
               double duration =
-                  _calculateDuration(shift.startTime, shift.endTime);
+              _calculateDuration(shift.startTime, shift.endTime);
               double earnings = duration *
                   _getHourlyRate(
                       shift.location, wageDetail.day, shift.startTime);
@@ -207,7 +207,7 @@ class _WorkHoursCalculatorState extends State<WorkHoursCalculator> {
                   String startTime = _formatTimeOfDay(shift.startTime);
                   String endTime = _formatTimeOfDay(shift.endTime);
                   double duration =
-                      _calculateDuration(shift.startTime, shift.endTime);
+                  _calculateDuration(shift.startTime, shift.endTime);
 
                   return pw.Text(
                       '${wageDetail.day}: Start - $startTime, End - $endTime, Location - ${shift.location}, Hours: ${duration.toStringAsFixed(2)}, Earnings - \$${(duration * _getHourlyRate(shift.location, wageDetail.day, shift.startTime)).toStringAsFixed(2)}');
@@ -372,7 +372,7 @@ class _WorkHoursCalculatorState extends State<WorkHoursCalculator> {
                     ),
                     pw.TextSpan(
                       text:
-                          '\n\nSalam brother, as per your previous instruction I have sorted my wages from $PouchDay (${cashTakenDate}) closing amount of ${PouchLocation}. On $PouchDay the closing amount of $PouchLocation was \$${closingAmount}, and my wages left after deducting Transferred amount is \$${_grandTotalWages}\n\nAMOUNT LEFT AFTER SORTING WAGES \n= (\$${closingAmount} - \$${_grandTotalWages}) = \$${wagesLeftOver}\n\nAnd I have left the after wages amount on the place where I usually put the closing money for Gosford.\n\nPlease let me know brother if there is any issue.\n\nThank You So Much Brother',
+                      '\n\nSalam brother, as per your previous instruction I have sorted my wages from $PouchDay (${_pouchDateController}) closing amount of ${PouchLocation}. On $PouchDay the closing amount of $PouchLocation was \$${closingAmount}, and my wages left after deducting Transferred amount is \$${_grandTotalWages}\n\nAMOUNT LEFT AFTER SORTING WAGES \n= (\$${closingAmount} - \$${_grandTotalWages}) = \$${wagesLeftOver}\n\nAnd I have left the after wages amount on the place where I usually put the closing money for Gosford.\n\nPlease let me know brother if there is any issue.\n\nThank You So Much Brother',
                     ),
                   ],
                 ),
@@ -440,9 +440,9 @@ class _WorkHoursCalculatorState extends State<WorkHoursCalculator> {
 
     final today = DateTime.now();
     final startTime =
-        DateTime(today.year, today.month, today.day, start.hour, start.minute);
+    DateTime(today.year, today.month, today.day, start.hour, start.minute);
     var endTime =
-        DateTime(today.year, today.month, today.day, end.hour, end.minute);
+    DateTime(today.year, today.month, today.day, end.hour, end.minute);
 
     if (endTime.isBefore(startTime)) {
       endTime = endTime.add(Duration(days: 1));
@@ -469,6 +469,7 @@ class _WorkHoursCalculatorState extends State<WorkHoursCalculator> {
     'Saturday': false,
     'Sunday': false,
   };
+
   // New variables for employee details
   String _date = '';
   String cashTakenDate = '';
@@ -500,6 +501,7 @@ class _WorkHoursCalculatorState extends State<WorkHoursCalculator> {
   double closingAmount = 0;
   bool isExpenseExplanationEnabled = false;
 
+  TextEditingController _pouchDateController = TextEditingController();
   TextEditingController _dateController = TextEditingController();
   @override
   void initState() {
@@ -510,6 +512,13 @@ class _WorkHoursCalculatorState extends State<WorkHoursCalculator> {
       _endTime[day] = null;
       _locations[day] = 'Gosford'; // Default value
     }
+  }
+
+  @override
+  void dispose() {
+    _dateController.dispose();
+    _pouchDateController.dispose();
+    super.dispose();
   }
 
   void _pickTime(BuildContext context, String day, bool isStartTime) async {
@@ -531,7 +540,7 @@ class _WorkHoursCalculatorState extends State<WorkHoursCalculator> {
   // Initialize _wageDetails with every day having an empty list of shifts
   List<WageDetail> _wageDetails = List.generate(
       7,
-      (index) => WageDetail(
+          (index) => WageDetail(
           day: DateFormat('EEEE')
               .format(DateTime.now().add(Duration(days: index))),
           shifts: []));
@@ -576,9 +585,9 @@ class _WorkHoursCalculatorState extends State<WorkHoursCalculator> {
       for (var shift in wageDetail.shifts) {
         if (shift.startTime != null && shift.endTime != null) {
           DateTime startDateTime =
-              DateTime(0, 0, 0, shift.startTime!.hour, shift.startTime!.minute);
+          DateTime(0, 0, 0, shift.startTime!.hour, shift.startTime!.minute);
           DateTime endDateTime =
-              DateTime(0, 0, 0, shift.endTime!.hour, shift.endTime!.minute);
+          DateTime(0, 0, 0, shift.endTime!.hour, shift.endTime!.minute);
 
           if (endDateTime.isBefore(startDateTime)) {
             endDateTime = endDateTime.add(Duration(days: 1));
@@ -596,7 +605,7 @@ class _WorkHoursCalculatorState extends State<WorkHoursCalculator> {
           switch (shift.location) {
             case 'Gosford':
               hourlyRate =
-                  isWeekend ? _gosfordWeekendRate : _gosfordWeekdayRate;
+              isWeekend ? _gosfordWeekendRate : _gosfordWeekdayRate;
               _totalFuelCost += _fuelCost;
               break;
             case 'Islington':
@@ -783,7 +792,7 @@ class _WorkHoursCalculatorState extends State<WorkHoursCalculator> {
           key: _formKey,
           child: Padding(
             padding:
-                EdgeInsets.all(screenSize.width * 0.05), // Responsive padding
+            EdgeInsets.all(screenSize.width * 0.05), // Responsive padding
             child: Column(
               children: <Widget>[
                 // Date field
@@ -872,11 +881,11 @@ class _WorkHoursCalculatorState extends State<WorkHoursCalculator> {
                                   TimeOfDay? pickedTime = await showTimePicker(
                                     context: context,
                                     initialTime:
-                                        shift.startTime ?? TimeOfDay.now(),
+                                    shift.startTime ?? TimeOfDay.now(),
                                   );
                                   if (pickedTime != null) {
                                     setState(
-                                        () => shift.startTime = pickedTime);
+                                            () => shift.startTime = pickedTime);
                                   }
                                 },
                               ),
@@ -890,7 +899,7 @@ class _WorkHoursCalculatorState extends State<WorkHoursCalculator> {
                                   TimeOfDay? pickedTime = await showTimePicker(
                                     context: context,
                                     initialTime:
-                                        shift.endTime ?? TimeOfDay.now(),
+                                    shift.endTime ?? TimeOfDay.now(),
                                   );
                                   if (pickedTime != null) {
                                     setState(() => shift.endTime = pickedTime);
@@ -901,9 +910,9 @@ class _WorkHoursCalculatorState extends State<WorkHoursCalculator> {
                                 value: shift.location,
                                 items: ['Gosford', 'Islington', 'Adamstown']
                                     .map((location) => DropdownMenuItem(
-                                          value: location,
-                                          child: Text(location),
-                                        ))
+                                  value: location,
+                                  child: Text(location),
+                                ))
                                     .toList(),
                                 onChanged: (value) {
                                   setState(() => shift.location = value!);
@@ -931,7 +940,7 @@ class _WorkHoursCalculatorState extends State<WorkHoursCalculator> {
                 // Rates and costs
                 TextFormField(
                   decoration:
-                      InputDecoration(labelText: 'Gosford Weekday Rate'),
+                  InputDecoration(labelText: 'Gosford Weekday Rate'),
                   keyboardType: TextInputType.number,
                   onSaved: (value) {
                     _gosfordWeekdayRate = double.tryParse(value ?? '') ?? 0;
@@ -939,7 +948,7 @@ class _WorkHoursCalculatorState extends State<WorkHoursCalculator> {
                 ),
                 TextFormField(
                   decoration:
-                      InputDecoration(labelText: 'Gosford Weekend Rate'),
+                  InputDecoration(labelText: 'Gosford Weekend Rate'),
                   keyboardType: TextInputType.number,
                   onSaved: (value) {
                     _gosfordWeekendRate = double.tryParse(value ?? '') ?? 0;
@@ -1022,21 +1031,7 @@ class _WorkHoursCalculatorState extends State<WorkHoursCalculator> {
                   },
                 ),
                 TextFormField(
-                  decoration: InputDecoration(
-                    labelText: 'Closing Pouch Location:',
-                    hintText: 'e.g., Gosford',
-                    hintStyle: TextStyle(
-                        color: Colors.grey), // Adjust the color to be lighter
-                  ),
-                  keyboardType: TextInputType.multiline,
-                  maxLines: null,
-                  onSaved: (value) {
-                    PouchLocation = value ?? '';
-                  },
-                ),
-
-                TextFormField(
-                  controller: _dateController,
+                  controller: _pouchDateController,
                   decoration: InputDecoration(labelText: 'Date of the pouch: '),
                   readOnly: true, // Make the text field read-only
                   onTap: () async {
@@ -1047,7 +1042,7 @@ class _WorkHoursCalculatorState extends State<WorkHoursCalculator> {
                       lastDate: DateTime(2025),
                     );
                     if (pickedDate != null) {
-                      _dateController.text =
+                      _pouchDateController.text =
                           DateFormat('yyyy-MM-dd').format(pickedDate);
                     }
                   },
@@ -1055,6 +1050,7 @@ class _WorkHoursCalculatorState extends State<WorkHoursCalculator> {
                     cashTakenDate = value ?? '';
                   },
                 ),
+
                 TextFormField(
                   decoration: InputDecoration(labelText: 'Closing day Amount:'),
                   keyboardType: TextInputType.number,
@@ -1085,8 +1081,7 @@ class _WorkHoursCalculatorState extends State<WorkHoursCalculator> {
                         onPressed: _clearForm,
                         child: Text('Clear'),
                         style: ElevatedButton.styleFrom(
-                          primary: Colors
-                              .red, // Differentiate from the Calculate button
+                          backgroundColor: Colors.red,
                         ),
                       ),
                     ],
